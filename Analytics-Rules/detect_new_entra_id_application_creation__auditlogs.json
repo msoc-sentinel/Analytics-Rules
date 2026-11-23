@@ -1,0 +1,63 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "workspace": {
+            "type": "String"
+        },
+        "ruleId": {
+            "type": "string",
+            "defaultValue": "[newGuid()]",
+            "metadata": {
+                "description": "The unique guid for this scheduled alert rule"
+            }
+        }
+    },
+    "resources": [
+        {
+            "id": "[concat(resourceId('Microsoft.OperationalInsights/workspaces/providers', parameters('workspace'), 'Microsoft.SecurityInsights'),'/alertRules/', parameters('ruleId'))]",
+            "name": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/', parameters('ruleId'))]",
+            "type": "Microsoft.OperationalInsights/workspaces/providers/alertRules",
+            "kind": "Scheduled",
+            "apiVersion": "2023-12-01-preview",
+            "properties": {
+                "displayName": "Detect new Entra ID application creation (AuditLogs)",
+                "description": "Detects successful creation of new Entra ID applications by looking for application creation-related audit operations in AuditLogs.",
+                "severity": "Medium",
+                "enabled": true,
+                "query": "AuditLogs\n| where TimeGenerated > ago(1h)\n| where Category == \"ApplicationManagement\"\n| where Result == \"success\"\n| where OperationName in (\"Application_Create\", \"Applications_Create\", \"AppRegistration_Create\", \"AppRegistrations_Create\", \"Create application\", \"Create application registration\")\n| project TimeGenerated, OperationName, Result, ResultDescription, InitiatedBy, LoggedByService, CorrelationId, ResourceId, Identity, TargetResources",
+                "queryFrequency": "PT1H",
+                "queryPeriod": "PT1H",
+                "triggerOperator": "GreaterThan",
+                "triggerThreshold": 0,
+                "suppressionDuration": "PT5H",
+                "suppressionEnabled": false,
+                "startTimeUtc": null,
+                "tactics": null,
+                "techniques": [],
+                "subTechniques": [],
+                "alertRuleTemplateName": null,
+                "incidentConfiguration": {
+                    "createIncident": true,
+                    "groupingConfiguration": {
+                        "enabled": false,
+                        "reopenClosedIncident": false,
+                        "lookbackDuration": "PT5H",
+                        "matchingMethod": "AllEntities",
+                        "groupByEntities": [],
+                        "groupByAlertDetails": [],
+                        "groupByCustomDetails": []
+                    }
+                },
+                "eventGroupingSettings": {
+                    "aggregationKind": "SingleAlert"
+                },
+                "alertDetailsOverride": null,
+                "customDetails": null,
+                "entityMappings": null,
+                "sentinelEntitiesMappings": null,
+                "templateVersion": null
+            }
+        }
+    ]
+}
